@@ -1,5 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { Languages, Undo2, UndoDot } from 'lucide-react';
+import { showToast } from 'nextjs-toast-notify';
 import { useEffect, useState } from 'react';
 interface SquareState {
   letter: string;
@@ -17,7 +19,21 @@ export default function WordleHelper() {
   const [currentRow, setCurrentRow] = useState(0);
   const [validWords, setValidWords] = useState<string[]>([]);
 
-  const [errorMessage, setErrorMessage] = useState<string>()
+  const [language, setLanguage] = useState<'en' | 'pt-BR'>(() => {
+    if (typeof window !== 'undefined') {
+      const browserLang = navigator.language || navigator.languages?.[0];
+      if (browserLang.startsWith('pt')) return 'pt-BR';
+    }
+    return 'en';
+  });
+
+  const onChangeLanguage = () => {
+    clearGrid()
+    setLanguage(language === 'en' ? 'pt-BR' : 'en')
+  }
+
+
+
   const [spoiler, setSpoiler] = useState(false);
 
   useEffect(() => {
@@ -75,20 +91,16 @@ export default function WordleHelper() {
 
   const handleDone = () => {
     if (selectedPositions.size === 0) return;
-
-    // Find best word that matches ONLY the selected positions (and doesn't match other positions)
     const selectedArray = Array.from(selectedPositions);
 
     const matchingWords = validWords.filter(word => {
       if (word.length !== 5) return false;
 
-      // Check if all selected positions match the correct word
       const selectedMatch = selectedArray.every(pos => word[pos] === correctWord[pos]);
 
-      // Check that NON-selected positions don't match the correct word
       const nonSelectedDontMatch = [0, 1, 2, 3, 4].every(pos => {
-        if (selectedPositions.has(pos)) return true; // Skip selected positions
-        return word[pos] !== correctWord[pos]; // Non-selected should NOT match
+        if (selectedPositions.has(pos)) return true;
+        return word[pos] !== correctWord[pos];
       });
 
       return selectedMatch && nonSelectedDontMatch;
@@ -115,14 +127,47 @@ export default function WordleHelper() {
 
       if (bestWord === correctWord) {
         setTimeout(() => {
-          // alert('Congratulations! You found the word!');
+          showToast.success(language === 'en' ? "Word found! Reset the grid to try other patterns." : "Palavra encontrada! Reinicie para tentar outros padrões.", {
+            duration: 4000,
+            progress: true,
+            position: "top-center",
+            transition: "popUp",
+          })
         }, 500);
       } else if (currentRow < 5) {
         setCurrentRow(currentRow + 1);
       }
     } else {
-      alert('No valid word found with the selected positions. Try selecting different squares.');
+      showToast.error(language === 'en' ? "No valid word found with the selected positions. Try selecting different squares." : "Nenhum palavra válida encontrada com as posições selecionadas.", {
+        duration: 4000,
+        progress: true,
+        position: "top-center",
+        transition: "popUp",
+      })
     }
+  };
+
+  const handleUndo = () => {
+    // Can only undo if we're not on the first row and the current row is empty
+    if (currentRow === 0) return;
+
+    // Check if current row is empty (no letters filled)
+    const currentRowEmpty = grid[currentRow].every(square => square.letter === '');
+
+    if (!currentRowEmpty) return; // Don't allow undo if current row has content
+
+    // Clear the previous row and go back
+    const newGrid = [...grid];
+    const previousRow = currentRow - 1;
+
+    newGrid[previousRow] = Array(5).fill(null).map(() => ({
+      letter: '',
+      status: 'empty'
+    }));
+
+    setGrid(newGrid);
+    setCurrentRow(previousRow);
+    setSelectedPositions(new Set());
   };
 
   const clearGrid = () => {
@@ -142,21 +187,51 @@ export default function WordleHelper() {
       case 'absent':
         return 'bg-gray-500 text-white border-gray-500';
       case 'selected':
-        return 'bg-blue-400 text-white border-blue-500';
+        return 'bg-green-400 text-white border-blue-500';
       default:
         return 'bg-white border-gray-300';
     }
   };
 
+  // Check if undo is available
+  const canUndo = currentRow > 0 && grid[currentRow].every(square => square.letter === '');
+
   return (
-    <div className="min-h-screen scheme-dark p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-2">Wordle Cheater</h1>
+        {/* Language Selector */}
+        <div className="flex justify-end mb-6">
+          <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+            <button
+              onClick={onChangeLanguage}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${language === 'en'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                : 'text-slate-400 hover:text-slate-300'
+                }`}
+            >
+              <Languages className="w-4 h-4" />
+              English
+            </button>
+            <button
+              onClick={onChangeLanguage}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${language === 'pt-BR'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                : 'text-slate-400 hover:text-slate-300'
+                }`}
+            >
+              <Languages className="w-4 h-4" />
+              Português
+            </button>
+          </div>
+        </div>
+
+        <h1 className="text-5xl pb-6 font-bold text-center mb-2 bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Wordle Painter</h1>
 
         {correctWord && (
-          <div className="text-center mb-4 p-4 bg-blue-100 rounded-lg">
-            <p className="text-sm text-gray-600">Today&apos;s word:</p>
-            <p className={`text-2xl font-bold ${spoiler ? 'text-blue-600' : 'text-gray-400 cursor-pointer'}`} onClick={() => setSpoiler(!spoiler)}>{spoiler ? correctWord.toUpperCase() : 'Click to Show'}</p>
+          <div className="text-center mb-6 p-4 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 select-none cursor-pointer hover:bg-slate-800/70 transition-all">
+            <p className="text-sm text-slate-400">{language === 'en' ? `Today's word:` : 'Palavra de Hoje'}</p>
+            <p className={`text-2xl font-bold ${spoiler ? 'text-blue-400' : 'text-slate-600 cursor-pointer'}`} onClick={() => setSpoiler(!spoiler)}>{spoiler ? correctWord.toUpperCase() : `${language === 'en' ? 'Click to show' : 'Clique para exibir'}`}</p>
+            <p className="text-sm text-slate-400 opacity-50">{language === 'en' ? 'from wordle.com' : 'de term.ooo'}</p>
           </div>
         )}
 
@@ -170,7 +245,7 @@ export default function WordleHelper() {
                       key={colIndex}
                       onClick={() => handleSquareClick(rowIndex, colIndex)}
                       disabled={rowIndex !== currentRow || square.letter !== ''}
-                      className={`h-16 w-16 border-2 flex items-center justify-center text-2xl font-bold transition-all duration-200 ${getSquareColor(square.status)} ${rowIndex === currentRow && square.letter === '' ? 'hover:border-blue-500 cursor-pointer' : 'cursor-not-allowed'
+                      className={`h-16 w-16 rounded-md flex items-center justify-center text-2xl font-bold transition-all duration-200 ${getSquareColor(square.status)} ${rowIndex === currentRow && square.letter === '' ? 'hover:border-blue-500 cursor-pointer' : 'cursor-not-allowed'
                         } ${rowIndex !== currentRow && square.letter === '' ? 'opacity-40' : ''
                         }`}
                     >
@@ -179,7 +254,7 @@ export default function WordleHelper() {
                   ))}
                 </div>
 
-                {/* Done Button - appears only on current row when squares are selected */}
+                {/* Done Button */}
                 <div className="w-24 ml-4">
                   {rowIndex === currentRow && selectedPositions.size > 0 && (
                     <Button
@@ -194,11 +269,34 @@ export default function WordleHelper() {
             ))}
           </div>
         </div>
+        <div className="flex justify-center gap-4 mb-6">
+          <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+            <button
+              onClick={handleUndo}
+              disabled={!canUndo}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${canUndo
+                ? 'text-slate-400 hover:text-slate-300 cursor-pointer'
+                : 'text-slate-600 cursor-not-allowed opacity-50'
+                }`}
+            >
+              <Undo2 className="w-4 h-4" />
+              {language === 'en' ? 'Undo' : 'Desfazer'}
+            </button>
+          </div>
+          <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+            <button
+              disabled={!canUndo}
+              onClick={clearGrid}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-300 cursor-pointer ${canUndo
+                ? 'text-slate-400 hover:text-slate-300 cursor-pointer'
+                : 'text-slate-600 cursor-not-allowed opacity-50'
+                }`}
+            >
+              <UndoDot className="w-4 h-4" />
+              {language === 'en' ? 'Restart' : 'Reiniciar'}
+            </button>
+          </div>
 
-        <div className="flex justify-center gap-4 mt-6">
-          <Button onClick={clearGrid} variant="outline" className="px-6">
-            Reset Grid
-          </Button>
         </div>
       </div>
     </div>
