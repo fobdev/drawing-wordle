@@ -29,10 +29,9 @@ export default function WordleHelper() {
 
   const onChangeLanguage = () => {
     clearGrid()
+    setSpoiler(false)
     setLanguage(language === 'en' ? 'pt-BR' : 'en')
   }
-
-
 
   const [spoiler, setSpoiler] = useState(false);
 
