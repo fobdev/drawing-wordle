@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Languages, Undo2, UndoDot, Check } from "lucide-react";
+import { Languages, Undo2, UndoDot, Check, Github } from "lucide-react";
 import { showToast } from "nextjs-toast-notify";
 import { useEffect, useState } from "react";
 interface SquareState {
@@ -253,7 +253,7 @@ export default function WordleHelper() {
         </div>
 
         <h1 className="text-5xl pb-6 font-bold text-center mb-2 bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-          Wordle Painter
+          Drawing Wordle
         </h1>
 
         {correctWord && (
@@ -348,7 +348,7 @@ export default function WordleHelper() {
             <button
               disabled={!canUndo}
               onClick={clearGrid}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-300 cursor-pointer ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                 canUndo
                   ? "text-slate-400 hover:text-slate-300 cursor-pointer"
                   : "text-slate-600 cursor-not-allowed opacity-50"
@@ -359,6 +359,24 @@ export default function WordleHelper() {
             </button>
           </div>
         </div>
+
+        <footer className="mt-12 py-6 text-center text-slate-500 text-sm border-t border-slate-700/50">
+          <div className="flex items-center justify-center gap-1 flex-wrap">
+            <span>
+              &copy; {new Date().getFullYear()} Drawing Wordle. All rights
+              reserved. Created by
+            </span>
+            <a
+              href="https://github.com/fobdev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 transition-colors font-medium inline-flex items-center gap-1"
+            >
+              <Github className="w-4 h-4" />
+              fobdev
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );
