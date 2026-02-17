@@ -87,6 +87,9 @@ export default function WordleHelper() {
     setSelectedPositions(newSelectedPositions);
 
     const newGrid = [...grid];
+    // Create a copy of the row to modify, to avoid mutating state directly
+    newGrid[rowIndex] = [...newGrid[rowIndex]];
+
     newGrid[rowIndex][colIndex] = {
       letter: "",
       status: newSelectedPositions.has(colIndex) ? "selected" : "empty",
@@ -117,6 +120,8 @@ export default function WordleHelper() {
     if (matchingWords.length > 0) {
       const bestWord = matchingWords[0];
       const newGrid = [...grid];
+      // Clone the row to modify
+      newGrid[currentRow] = [...newGrid[currentRow]];
 
       for (let i = 0; i < 5; i++) {
         const char = bestWord[i];
@@ -169,21 +174,25 @@ export default function WordleHelper() {
   };
 
   const handleUndo = () => {
-    // Can only undo if we're not on the first row and the current row is empty
+    // Can only undo if we're not on the first row
     if (currentRow === 0) return;
 
-    // Check if current row is empty (no letters filled)
-    const currentRowEmpty = grid[currentRow].every(
-      (square) => square.letter === "",
-    );
-
-    if (!currentRowEmpty) return; // Don't allow undo if current row has content
-
     // Clear the previous row and go back
-    const newGrid = [...grid];
     const previousRow = currentRow - 1;
 
+    // Create a deep copy of the grid structure regarding the rows we touch
+    const newGrid = [...grid];
+
+    // Clear the previous row (which is becoming the current row)
     newGrid[previousRow] = Array(5)
+      .fill(null)
+      .map(() => ({
+        letter: "",
+        status: "empty",
+      }));
+
+    // Also clear the current row (the one we are leaving) to remove any selected squares
+    newGrid[currentRow] = Array(5)
       .fill(null)
       .map(() => ({
         letter: "",
@@ -193,6 +202,7 @@ export default function WordleHelper() {
     setGrid(newGrid);
     setCurrentRow(previousRow);
     setSelectedPositions(new Set());
+    setIsShaking(false);
   };
 
   const clearGrid = () => {
