@@ -5,5 +5,5 @@
 - GG
 - This entire project was vibe coded, btw.
 
-### Check the project at [drawing-wordle.vercel.app](drawing-wordle.vercel.app)
+### Check the project at [drawing-wordle.vercel.app](https://drawing-wordle.vercel.app/)
 I might buy a domain for it later, idk.
