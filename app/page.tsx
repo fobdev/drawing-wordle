@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Languages, Undo2, UndoDot, Check, Github } from "lucide-react";
-import { showToast } from "nextjs-toast-notify";
+import { Toast } from "@/components/Toast";
 import { useEffect, useState } from "react";
 interface SquareState {
   letter: string;
@@ -42,6 +42,19 @@ export default function WordleHelper() {
   const [spoiler, setSpoiler] = useState(false);
 
   const [isShaking, setIsShaking] = useState(false);
+
+  const [toast, setToast] = useState<{ message: string; isVisible: boolean }>({
+    message: "",
+    isVisible: false,
+  });
+
+  const showMessage = (msg: string) => {
+    setToast({ message: msg, isVisible: true });
+  };
+
+  const closeToast = () => {
+    setToast((prev) => ({ ...prev, isVisible: false }));
+  };
 
   useEffect(() => {
     const loadDictionary = async () => {
@@ -140,16 +153,10 @@ export default function WordleHelper() {
 
       if (bestWord === correctWord) {
         setTimeout(() => {
-          showToast.success(
+          showMessage(
             language === "en"
               ? "Word found! Reset the grid to try other patterns."
               : "Palavra encontrada! Reinicie para tentar outros padrões.",
-            {
-              duration: 4000,
-              progress: true,
-              position: "top-center",
-              transition: "popUp",
-            },
           );
         }, 500);
       } else if (currentRow < 5) {
@@ -159,16 +166,10 @@ export default function WordleHelper() {
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
 
-      showToast.error(
+      showMessage(
         language === "en"
-          ? "No valid word found with the selected positions. Try selecting different squares."
-          : "Nenhum palavra válida encontrada com as posições selecionadas.",
-        {
-          duration: 4000,
-          progress: true,
-          position: "top-center",
-          transition: "popUp",
-        },
+          ? "No valid word found"
+          : "Nenhuma palavra válida encontrada",
       );
     }
   };
@@ -221,18 +222,18 @@ export default function WordleHelper() {
 
   const getSquareColor = (status: string, rowIndex: number) => {
     if (rowIndex === currentRow && isShaking) {
-      return "bg-pink-200 border-pink-400 text-slate-900";
+      return "bg-[#121213] border-red-500 text-white";
     }
 
     switch (status) {
       case "correct":
-        return "bg-green-500 text-white border-green-500";
+        return "bg-[#538d4e] text-white border-[#538d4e]";
       case "absent":
-        return "bg-gray-500 text-white border-gray-500";
+        return "bg-[#3a3a3c] text-white border-[#3a3a3c]";
       case "selected":
-        return "bg-green-400 text-white border-blue-500";
+        return "bg-[#538d4e] text-white border-[#538d4e]";
       default:
-        return "bg-white border-gray-300";
+        return "bg-[#121213] text-white border-[#3a3a3c]";
     }
   };
 
@@ -245,17 +246,22 @@ export default function WordleHelper() {
     grid.some((row) => row.some((square) => square.letter !== ""));
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+    <div className="min-h-screen bg-[#121213] p-8 font-sans">
       <div className="max-w-4xl mx-auto">
+        <Toast
+          message={toast.message}
+          isVisible={toast.isVisible}
+          onClose={closeToast}
+        />
         {/* Language Selector */}
         <div className="flex justify-end mb-6">
-          <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+          <div className="inline-flex rounded-lg bg-[#121213] border border-[#3a3a3c] p-1">
             <button
               onClick={onChangeLanguage}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${
                 language === "en"
-                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                  : "text-slate-400 hover:text-slate-300"
+                  ? "bg-[#538d4e] text-white"
+                  : "text-[#818384] hover:text-white"
               }`}
             >
               <Languages className="w-4 h-4" />
@@ -263,10 +269,10 @@ export default function WordleHelper() {
             </button>
             <button
               onClick={onChangeLanguage}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${
                 language === "pt-BR"
-                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                  : "text-slate-400 hover:text-slate-300"
+                  ? "bg-[#538d4e] text-white"
+                  : "text-[#818384] hover:text-white"
               }`}
             >
               <Languages className="w-4 h-4" />
@@ -275,25 +281,30 @@ export default function WordleHelper() {
           </div>
         </div>
 
-        <h1 className="text-5xl pb-6 font-bold text-center mb-2 bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold text-center mb-2 text-white font-serif tracking-wider">
           Drawing Wordle
         </h1>
+        <h3 className="text-lg font-medium text-center mb-8 text-[#818384] tracking-wide font-sans">
+          {language === "en"
+            ? "Draw anything in the Wordle grid - line by line!"
+            : "Desenhe qualquer coisa na grade do Wordle - linha por linha!"}
+        </h3>
 
         {correctWord && (
-          <div className="text-center mb-6 p-4 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 select-none cursor-pointer hover:bg-slate-800/70 transition-all">
-            <p className="text-sm text-slate-400">
-              {language === "en" ? `Today's word:` : "Palavra de Hoje"}
+          <div className="text-center mb-6 p-4 bg-[#121213] rounded-xl border border-[#3a3a3c] select-none cursor-pointer hover:border-[#565758] transition-all">
+            <p className="text-sm text-[#818384]">
+              {language === "en" ? `Today's word` : "Palavra de Hoje"}
             </p>
             <p
-              className={`text-2xl font-bold ${spoiler ? "text-blue-400" : "text-slate-600 cursor-pointer"}`}
+              className={`text-2xl font-bold font-mono tracking-widest ${spoiler ? "text-[#538d4e]" : "text-[#818384] cursor-pointer"}`}
               onClick={() => setSpoiler(!spoiler)}
             >
               {spoiler
                 ? correctWord.toUpperCase()
                 : `${language === "en" ? "Click to show" : "Clique para exibir"}`}
             </p>
-            <p className="text-sm text-slate-400 opacity-50">
-              {language === "en" ? "from wordle.com" : "de term.ooo"}
+            <p className="text-sm text-[#818384] opacity-50">
+              {language === "en" ? "from wordle.com" : "de wordle.com"}
             </p>
           </div>
         )}
@@ -313,9 +324,9 @@ export default function WordleHelper() {
                       key={colIndex}
                       onClick={() => handleSquareClick(rowIndex, colIndex)}
                       disabled={rowIndex !== currentRow || square.letter !== ""}
-                      className={`h-16 w-16 rounded-md flex items-center justify-center text-2xl font-bold transition-all duration-200 ${getSquareColor(square.status, rowIndex)} ${
+                      className={`h-16 w-16 border-2 flex items-center justify-center text-3xl font-bold transition-all duration-200 select-none ${getSquareColor(square.status, rowIndex)} ${
                         rowIndex === currentRow && square.letter === ""
-                          ? "hover:border-blue-500 cursor-pointer"
+                          ? "hover:border-[#565758] cursor-pointer"
                           : "cursor-not-allowed"
                       } ${
                         rowIndex !== currentRow && square.letter === ""
@@ -333,7 +344,7 @@ export default function WordleHelper() {
                   {rowIndex === currentRow && selectedPositions.size > 0 && (
                     <Button
                       onClick={handleDone}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6"
+                      className="bg-[#538d4e] hover:bg-[#467b41] text-white font-bold px-6 border-none"
                     >
                       Done
                     </Button>
@@ -344,42 +355,42 @@ export default function WordleHelper() {
           </div>
         </div>
         <div className="flex justify-center gap-4 mb-6">
-          <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+          <div className="inline-flex rounded-lg bg-[#818384] p-0.5">
             <button
               onClick={handleUndo}
               disabled={!canUndo}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${
                 canUndo
-                  ? "text-slate-400 hover:text-slate-300 cursor-pointer"
-                  : "text-slate-600 cursor-not-allowed opacity-50"
+                  ? "text-white hover:bg-[#565758] cursor-pointer"
+                  : "text-[#3a3a3c] cursor-not-allowed"
               }`}
             >
               <Undo2 className="w-4 h-4" />
               {language === "en" ? "Undo" : "Desfazer"}
             </button>
           </div>
-          <div className="md:hidden inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+          <div className="md:hidden inline-flex rounded-lg bg-[#818384] p-0.5">
             <button
               onClick={handleDone}
               disabled={selectedPositions.size === 0}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${
                 selectedPositions.size > 0
-                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                  : "text-slate-600 cursor-not-allowed opacity-50"
+                  ? "bg-[#538d4e] text-white"
+                  : "text-[#3a3a3c] cursor-not-allowed"
               }`}
             >
               <Check className="w-4 h-4" />
               {language === "en" ? "Submit" : "Enviar"}
             </button>
           </div>
-          <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
+          <div className="inline-flex rounded-lg bg-[#818384] p-0.5">
             <button
               disabled={!canRestart}
               onClick={clearGrid}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${
                 canRestart
-                  ? "text-slate-400 hover:text-slate-300 cursor-pointer"
-                  : "text-slate-600 cursor-not-allowed opacity-50"
+                  ? "text-white hover:bg-[#565758] cursor-pointer"
+                  : "text-[#3a3a3c] cursor-not-allowed"
               }`}
             >
               <UndoDot className="w-4 h-4" />
@@ -388,7 +399,7 @@ export default function WordleHelper() {
           </div>
         </div>
 
-        <footer className="mt-12 py-6 text-center text-slate-500 text-sm border-t border-slate-700/50">
+        <footer className="mt-12 py-6 text-center text-[#565758] text-sm border-t border-[#3a3a3c]">
           <div className="flex items-center justify-center gap-1 flex-wrap">
             <span>
               &copy; {new Date().getFullYear()} Drawing Wordle. All rights
@@ -398,7 +409,7 @@ export default function WordleHelper() {
               href="https://github.com/fobdev"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 transition-colors font-medium inline-flex items-center gap-1"
+              className="text-[#538d4e] hover:text-white transition-colors font-bold inline-flex items-center gap-1"
             >
               <Github className="w-4 h-4" />
               fobdev
