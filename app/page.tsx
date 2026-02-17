@@ -230,6 +230,10 @@ export default function WordleHelper() {
   const canUndo =
     currentRow > 0 && grid[currentRow].every((square) => square.letter === "");
 
+  const canRestart =
+    currentRow > 0 ||
+    grid.some((row) => row.some((square) => square.letter !== ""));
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
       <div className="max-w-4xl mx-auto">
@@ -360,10 +364,10 @@ export default function WordleHelper() {
           </div>
           <div className="inline-flex rounded-lg bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-1">
             <button
-              disabled={!canUndo}
+              disabled={!canRestart}
               onClick={clearGrid}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                canUndo
+                canRestart
                   ? "text-slate-400 hover:text-slate-300 cursor-pointer"
                   : "text-slate-600 cursor-not-allowed opacity-50"
               }`}
