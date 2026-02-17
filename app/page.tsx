@@ -41,6 +41,8 @@ export default function WordleHelper() {
 
   const [spoiler, setSpoiler] = useState(false);
 
+  const [isShaking, setIsShaking] = useState(false);
+
   useEffect(() => {
     const loadDictionary = async () => {
       try {
@@ -149,6 +151,9 @@ export default function WordleHelper() {
         setCurrentRow(currentRow + 1);
       }
     } else {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+
       showToast.error(
         language === "en"
           ? "No valid word found with the selected positions. Try selecting different squares."
@@ -204,7 +209,11 @@ export default function WordleHelper() {
     setCurrentRow(0);
   };
 
-  const getSquareColor = (status: string) => {
+  const getSquareColor = (status: string, rowIndex: number) => {
+    if (rowIndex === currentRow && isShaking) {
+      return "bg-pink-200 border-pink-400 text-slate-900";
+    }
+
     switch (status) {
       case "correct":
         return "bg-green-500 text-white border-green-500";
@@ -278,14 +287,19 @@ export default function WordleHelper() {
         <div className="flex justify-center mb-6">
           <div className="flex flex-col gap-2">
             {grid.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex gap-2 items-center">
+              <div
+                key={rowIndex}
+                className={`flex gap-2 items-center ${
+                  rowIndex === currentRow && isShaking ? "shake" : ""
+                }`}
+              >
                 <div className="flex gap-2 md:ml-30">
                   {row.map((square, colIndex) => (
                     <button
                       key={colIndex}
                       onClick={() => handleSquareClick(rowIndex, colIndex)}
                       disabled={rowIndex !== currentRow || square.letter !== ""}
-                      className={`h-16 w-16 rounded-md flex items-center justify-center text-2xl font-bold transition-all duration-200 ${getSquareColor(square.status)} ${
+                      className={`h-16 w-16 rounded-md flex items-center justify-center text-2xl font-bold transition-all duration-200 ${getSquareColor(square.status, rowIndex)} ${
                         rowIndex === currentRow && square.letter === ""
                           ? "hover:border-blue-500 cursor-pointer"
                           : "cursor-not-allowed"
