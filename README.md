@@ -4,3 +4,6 @@
 - At the result screen, show your friends what you've done
 - GG
 - This entire project was vibe coded, btw.
+
+### Check the project at [drawing-wordle.vercel.app](drawing-wordle.vercel.app)
+I might buy a domain for it later, idk.
