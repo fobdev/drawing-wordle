@@ -13,7 +13,7 @@ export function Toast({ message, isVisible, onClose }: ToastProps) {
     if (isVisible) {
       const timer = setTimeout(() => {
         onClose();
-      }, 2500);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [isVisible, onClose]);
