@@ -5,7 +5,7 @@ import { Toast } from "@/components/Toast";
 import { useEffect, useState } from "react";
 interface SquareState {
   letter: string;
-  status: "empty" | "correct" | "absent" | "selected";
+  status: "empty" | "correct" | "absent" | "selected" | "misplaced";
 }
 
 export default function WordleHelper() {
@@ -20,6 +20,9 @@ export default function WordleHelper() {
       ),
   );
   const [selectedPositions, setSelectedPositions] = useState<Set<number>>(
+    new Set(),
+  );
+  const [misplacedPositions, setMisplacedPositions] = useState<Set<number>>(
     new Set(),
   );
   const [currentRow, setCurrentRow] = useState(0);
@@ -93,11 +96,27 @@ export default function WordleHelper() {
     if (grid[rowIndex][colIndex].letter !== "") return;
 
     const newSelectedPositions = new Set(selectedPositions);
+    const newMisplacedPositions = new Set(misplacedPositions);
 
-    if (selectedPositions.has(colIndex)) newSelectedPositions.delete(colIndex);
-    else newSelectedPositions.add(colIndex);
+    let nextStatus: "empty" | "selected" | "misplaced";
+
+    if (selectedPositions.has(colIndex)) {
+      // green → yellow
+      newSelectedPositions.delete(colIndex);
+      newMisplacedPositions.add(colIndex);
+      nextStatus = "misplaced";
+    } else if (misplacedPositions.has(colIndex)) {
+      // yellow → empty
+      newMisplacedPositions.delete(colIndex);
+      nextStatus = "empty";
+    } else {
+      // empty → green
+      newSelectedPositions.add(colIndex);
+      nextStatus = "selected";
+    }
 
     setSelectedPositions(newSelectedPositions);
+    setMisplacedPositions(newMisplacedPositions);
 
     const newGrid = [...grid];
     // Create a copy of the row to modify, to avoid mutating state directly
@@ -105,42 +124,65 @@ export default function WordleHelper() {
 
     newGrid[rowIndex][colIndex] = {
       letter: "",
-      status: newSelectedPositions.has(colIndex) ? "selected" : "empty",
+      status: nextStatus,
     };
 
     setGrid(newGrid);
   };
 
   const handleDone = () => {
-    if (selectedPositions.size === 0) return;
     const selectedArray = Array.from(selectedPositions);
+    const misplacedArray = Array.from(misplacedPositions);
 
     const matchingWords = validWords.filter((word) => {
       if (word.length !== 5) return false;
 
+      // Green constraints: letter must be exactly at this position
       const selectedMatch = selectedArray.every(
         (pos) => word[pos] === correctWord[pos],
       );
+      if (!selectedMatch) return false;
 
+      // Yellow constraints: the correct-word letter at that position
+      // must appear somewhere in the word, but NOT at that position
+      const misplacedMatch = misplacedArray.every((pos) => {
+        const targetLetter = correctWord[pos];
+        return word[pos] !== targetLetter && word.includes(targetLetter);
+      });
+      if (!misplacedMatch) return false;
+
+      // Non-selected, non-misplaced positions: word letter must differ from correct word
       const nonSelectedDontMatch = [0, 1, 2, 3, 4].every((pos) => {
         if (selectedPositions.has(pos)) return true;
+        if (misplacedPositions.has(pos)) return true;
         return word[pos] !== correctWord[pos];
       });
 
-      return selectedMatch && nonSelectedDontMatch;
+      return nonSelectedDontMatch;
     });
 
-    if (matchingWords.length > 0) {
-      const bestWord = matchingWords[0];
+    // If nothing is selected at all, override with words that share NO letters with the correct word
+    const isBlankRow = selectedPositions.size === 0 && misplacedPositions.size === 0;
+    const candidateWords = isBlankRow
+      ? validWords.filter(
+        (word) =>
+          word.length === 5 &&
+          !word.split("").some((ch) => correctWord.includes(ch)),
+      )
+      : matchingWords;
+
+    if (candidateWords.length > 0) {
+      const bestWord = candidateWords[Math.floor(Math.random() * candidateWords.length)];
       const newGrid = [...grid];
       // Clone the row to modify
       newGrid[currentRow] = [...newGrid[currentRow]];
 
       for (let i = 0; i < 5; i++) {
         const char = bestWord[i];
-        let status: "correct" | "absent" = "absent";
+        let status: "correct" | "absent" | "misplaced" = "absent";
 
         if (selectedPositions.has(i)) status = "correct";
+        else if (misplacedPositions.has(i)) status = "misplaced";
 
         newGrid[currentRow][i] = {
           letter: char.toUpperCase(),
@@ -150,6 +192,7 @@ export default function WordleHelper() {
 
       setGrid(newGrid);
       setSelectedPositions(new Set());
+      setMisplacedPositions(new Set());
 
       if (bestWord === correctWord) {
         showMessage(
@@ -173,34 +216,42 @@ export default function WordleHelper() {
   };
 
   const handleUndo = () => {
-    // Can only undo if we're not on the first row
-    if (currentRow === 0) return;
+    if (!canUndo) return;
 
-    // Clear the previous row and go back
-    const previousRow = currentRow - 1;
-
-    // Create a deep copy of the grid structure regarding the rows we touch
     const newGrid = [...grid];
+    const currentRowFilled = grid[currentRow].some((sq) => sq.letter !== "");
 
-    // Clear the previous row (which is becoming the current row)
-    newGrid[previousRow] = Array(5)
-      .fill(null)
-      .map(() => ({
-        letter: "",
-        status: "empty",
-      }));
+    if (currentRowFilled) {
+      // The current row itself has letters (last row filled, or word found).
+      // Wipe this row and also the row above so the user can re-draw both.
+      newGrid[currentRow] = Array(5)
+        .fill(null)
+        .map(() => ({ letter: "", status: "empty" }));
 
-    // Also clear the current row (the one we are leaving) to remove any selected squares
-    newGrid[currentRow] = Array(5)
-      .fill(null)
-      .map(() => ({
-        letter: "",
-        status: "empty",
-      }));
+      if (currentRow > 0) {
+        const previousRow = currentRow - 1;
+        newGrid[previousRow] = Array(5)
+          .fill(null)
+          .map(() => ({ letter: "", status: "empty" }));
+        setCurrentRow(previousRow);
+      }
+      // (if currentRow === 0 and it had letters, we just cleared it, stay at 0)
+    } else {
+      // Normal case: current row is empty, undo the previous row
+      const previousRow = currentRow - 1;
+      newGrid[previousRow] = Array(5)
+        .fill(null)
+        .map(() => ({ letter: "", status: "empty" }));
+      // Clear any selected-but-not-committed state on current row too
+      newGrid[currentRow] = Array(5)
+        .fill(null)
+        .map(() => ({ letter: "", status: "empty" }));
+      setCurrentRow(previousRow);
+    }
 
     setGrid(newGrid);
-    setCurrentRow(previousRow);
     setSelectedPositions(new Set());
+    setMisplacedPositions(new Set());
     setIsShaking(false);
   };
 
@@ -215,6 +266,7 @@ export default function WordleHelper() {
         ),
     );
     setSelectedPositions(new Set());
+    setMisplacedPositions(new Set());
     setCurrentRow(0);
   };
 
@@ -230,14 +282,18 @@ export default function WordleHelper() {
         return "bg-[#3a3a3c] text-white border-[#3a3a3c]";
       case "selected":
         return "bg-[#538d4e] text-white border-[#538d4e]";
+      case "misplaced":
+        return "bg-[#b59f3b] text-white border-[#b59f3b]";
       default:
         return "bg-[#121213] text-white border-[#3a3a3c]";
     }
   };
 
-  // Check if undo is available
-  const canUndo =
-    currentRow > 0 && grid[currentRow].every((square) => square.letter === "");
+  // Undo is available whenever at least one row has been committed
+  // (covers: normal rows, last row, and word-found state)
+  const canUndo = grid
+    .slice(0, currentRow + 1)
+    .some((row) => row.some((sq) => sq.letter !== ""));
 
   const canRestart =
     currentRow > 0 ||
@@ -334,7 +390,7 @@ export default function WordleHelper() {
 
                 {/* Done Button */}
                 <div className="hidden md:block w-24 ml-4">
-                  {rowIndex === currentRow && selectedPositions.size > 0 && (
+                  {rowIndex === currentRow && (
                     <Button
                       onClick={handleDone}
                       className="bg-[#538d4e] hover:bg-[#467b41] text-white font-bold px-6 border-none"
@@ -364,11 +420,7 @@ export default function WordleHelper() {
           <div className="md:hidden inline-flex rounded-lg bg-[#818384] p-0.5">
             <button
               onClick={handleDone}
-              disabled={selectedPositions.size === 0}
-              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${selectedPositions.size > 0
-                ? "bg-[#538d4e] text-white"
-                : "text-[#3a3a3c] cursor-not-allowed"
-                }`}
+              className="px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 bg-[#538d4e] text-white cursor-pointer"
             >
               <Check className="w-4 h-4" />
               {language === "en" ? "Submit" : "Enviar"}
