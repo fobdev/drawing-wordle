@@ -131,34 +131,42 @@ export default function WordleHelper() {
   };
 
   const handleDone = () => {
-    const selectedArray = Array.from(selectedPositions);
-    const misplacedArray = Array.from(misplacedPositions);
-
     const matchingWords = validWords.filter((word) => {
       if (word.length !== 5) return false;
 
-      // Green constraints: letter must be exactly at this position
-      const selectedMatch = selectedArray.every(
-        (pos) => word[pos] === correctWord[pos],
-      );
-      if (!selectedMatch) return false;
+      // Simulate Wordle's two-pass coloring algorithm:
+      // Pass 1 — mark greens and track remaining answer letters
+      const simColors: ("correct" | "present" | "absent")[] = Array(5).fill("absent");
+      const answerCount: Record<string, number> = {};
+      for (const ch of correctWord) answerCount[ch] = (answerCount[ch] || 0) + 1;
 
-      // Yellow constraints: the correct-word letter at that position
-      // must appear somewhere in the word, but NOT at that position
-      const misplacedMatch = misplacedArray.every((pos) => {
-        const targetLetter = correctWord[pos];
-        return word[pos] !== targetLetter && word.includes(targetLetter);
-      });
-      if (!misplacedMatch) return false;
+      for (let i = 0; i < 5; i++) {
+        if (word[i] === correctWord[i]) {
+          simColors[i] = "correct";
+          answerCount[word[i]]--;
+        }
+      }
 
-      // Non-selected, non-misplaced positions: word letter must differ from correct word
-      const nonSelectedDontMatch = [0, 1, 2, 3, 4].every((pos) => {
-        if (selectedPositions.has(pos)) return true;
-        if (misplacedPositions.has(pos)) return true;
-        return word[pos] !== correctWord[pos];
-      });
+      // Pass 2 — mark yellows from remaining letter pool
+      for (let i = 0; i < 5; i++) {
+        if (simColors[i] === "correct") continue;
+        if (answerCount[word[i]] > 0) {
+          simColors[i] = "present";
+          answerCount[word[i]]--;
+        }
+      }
 
-      return nonSelectedDontMatch;
+      // Now verify every position matches what the user painted:
+      // green positions → must simulate "correct"
+      // yellow positions → must simulate "present"
+      // blank/grey positions → must simulate "absent"
+      for (let i = 0; i < 5; i++) {
+        if (selectedPositions.has(i) && simColors[i] !== "correct") return false;
+        if (misplacedPositions.has(i) && simColors[i] !== "present") return false;
+        if (!selectedPositions.has(i) && !misplacedPositions.has(i) && simColors[i] !== "absent") return false;
+      }
+
+      return true;
     });
 
     // If nothing is selected at all, override with words that share NO letters with the correct word
