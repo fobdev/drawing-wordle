@@ -152,13 +152,11 @@ export default function WordleHelper() {
       setSelectedPositions(new Set());
 
       if (bestWord === correctWord) {
-        setTimeout(() => {
-          showMessage(
-            language === "en"
-              ? "Word found! Reset the grid to try other patterns."
-              : "Palavra encontrada! Reinicie para tentar outros padrões.",
-          );
-        }, 500);
+        showMessage(
+          language === "en"
+            ? "Word found!"
+            : "Palavra encontrada!",
+        );
       } else if (currentRow < 5) {
         setCurrentRow(currentRow + 1);
       }
@@ -258,22 +256,20 @@ export default function WordleHelper() {
           <div className="inline-flex rounded-lg bg-[#121213] border border-[#3a3a3c] p-1">
             <button
               onClick={onChangeLanguage}
-              className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${
-                language === "en"
-                  ? "bg-[#538d4e] text-white"
-                  : "text-[#818384] hover:text-white"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${language === "en"
+                ? "bg-[#538d4e] text-white"
+                : "text-[#818384] hover:text-white"
+                }`}
             >
               <Languages className="w-4 h-4" />
               English
             </button>
             <button
               onClick={onChangeLanguage}
-              className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${
-                language === "pt-BR"
-                  ? "bg-[#538d4e] text-white"
-                  : "text-[#818384] hover:text-white"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${language === "pt-BR"
+                ? "bg-[#538d4e] text-white"
+                : "text-[#818384] hover:text-white"
+                }`}
             >
               <Languages className="w-4 h-4" />
               Português
@@ -314,9 +310,8 @@ export default function WordleHelper() {
             {grid.map((row, rowIndex) => (
               <div
                 key={rowIndex}
-                className={`flex gap-2 items-center ${
-                  rowIndex === currentRow && isShaking ? "shake" : ""
-                }`}
+                className={`flex gap-2 items-center ${rowIndex === currentRow && isShaking ? "shake" : ""
+                  }`}
               >
                 <div className="flex gap-2 md:ml-30">
                   {row.map((square, colIndex) => (
@@ -324,15 +319,13 @@ export default function WordleHelper() {
                       key={colIndex}
                       onClick={() => handleSquareClick(rowIndex, colIndex)}
                       disabled={rowIndex !== currentRow || square.letter !== ""}
-                      className={`h-16 w-16 border-2 flex items-center justify-center text-3xl font-bold transition-all duration-200 select-none ${getSquareColor(square.status, rowIndex)} ${
-                        rowIndex === currentRow && square.letter === ""
-                          ? "hover:border-[#565758] cursor-pointer"
-                          : "cursor-not-allowed"
-                      } ${
-                        rowIndex !== currentRow && square.letter === ""
+                      className={`h-16 w-16 border-2 flex items-center justify-center text-3xl font-bold transition-all duration-200 select-none ${getSquareColor(square.status, rowIndex)} ${rowIndex === currentRow && square.letter === ""
+                        ? "hover:border-[#565758] cursor-pointer"
+                        : "cursor-not-allowed"
+                        } ${rowIndex !== currentRow && square.letter === ""
                           ? "opacity-40"
                           : ""
-                      }`}
+                        }`}
                     >
                       {square.letter}
                     </button>
@@ -359,11 +352,10 @@ export default function WordleHelper() {
             <button
               onClick={handleUndo}
               disabled={!canUndo}
-              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${
-                canUndo
-                  ? "text-white hover:bg-[#565758] cursor-pointer"
-                  : "text-[#3a3a3c] cursor-not-allowed"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${canUndo
+                ? "text-white hover:bg-[#565758] cursor-pointer"
+                : "text-[#3a3a3c] cursor-not-allowed"
+                }`}
             >
               <Undo2 className="w-4 h-4" />
               {language === "en" ? "Undo" : "Desfazer"}
@@ -373,11 +365,10 @@ export default function WordleHelper() {
             <button
               onClick={handleDone}
               disabled={selectedPositions.size === 0}
-              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${
-                selectedPositions.size > 0
-                  ? "bg-[#538d4e] text-white"
-                  : "text-[#3a3a3c] cursor-not-allowed"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${selectedPositions.size > 0
+                ? "bg-[#538d4e] text-white"
+                : "text-[#3a3a3c] cursor-not-allowed"
+                }`}
             >
               <Check className="w-4 h-4" />
               {language === "en" ? "Submit" : "Enviar"}
@@ -387,11 +378,10 @@ export default function WordleHelper() {
             <button
               disabled={!canRestart}
               onClick={clearGrid}
-              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${
-                canRestart
-                  ? "text-white hover:bg-[#565758] cursor-pointer"
-                  : "text-[#3a3a3c] cursor-not-allowed"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-bold uppercase transition-all flex items-center gap-2 ${canRestart
+                ? "text-white hover:bg-[#565758] cursor-pointer"
+                : "text-[#3a3a3c] cursor-not-allowed"
+                }`}
             >
               <UndoDot className="w-4 h-4" />
               {language === "en" ? "Restart" : "Reiniciar"}
