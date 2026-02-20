@@ -452,8 +452,10 @@ export default function WordleHelper() {
         <footer className="mt-12 py-6 text-center text-[#565758] text-sm border-t border-[#3a3a3c]">
           <div className="flex items-center justify-center gap-1 flex-wrap">
             <span>
-              &copy; {new Date().getFullYear()} Drawing Wordle. All rights
-              reserved. Created by
+              &copy; {new Date().getFullYear()} Drawing Wordle.{" "}
+              {language === "en"
+                ? "All rights reserved. Created by"
+                : "Todos os direitos reservados. Criado por"}
             </span>
             <a
               href="https://github.com/fobdev"
