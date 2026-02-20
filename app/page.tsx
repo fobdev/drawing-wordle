@@ -427,7 +427,7 @@ export default function WordleHelper() {
                       onClick={handleDone}
                       className="bg-[#538d4e] hover:bg-[#467b41] text-white font-bold px-6 border-none"
                     >
-                      Done
+                      {language === "en" ? "Done" : "Pronto"}
                     </Button>
                   )}
                 </div>
