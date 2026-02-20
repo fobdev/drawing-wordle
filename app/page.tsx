@@ -29,9 +29,33 @@ export default function WordleHelper() {
   const [validWords, setValidWords] = useState<string[]>([]);
 
   const [language, setLanguage] = useState<"en" | "pt-BR">(() => {
-    if (typeof window !== "undefined") {
-      const browserLang = navigator.language || navigator.languages?.[0];
-      if (browserLang.startsWith("pt")) return "pt-BR";
+    // Detect locale via IANA timezone — no network call, no API key needed.
+    // All Brazilian timezones are well-known and distinct.
+    const BRAZIL_TIMEZONES = new Set([
+      "America/Sao_Paulo",
+      "America/Fortaleza",
+      "America/Manaus",
+      "America/Belem",
+      "America/Campo_Grande",
+      "America/Cuiaba",
+      "America/Porto_Velho",
+      "America/Boa_Vista",
+      "America/Noronha",
+      "America/Araguaina",
+      "America/Maceio",
+      "America/Recife",
+      "America/Santarem",
+      "America/Bahia",
+    ]);
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (BRAZIL_TIMEZONES.has(tz)) return "pt-BR";
+    } catch {
+      // Intl not available — fall back to browser language
+      if (typeof window !== "undefined") {
+        const browserLang = navigator.language || navigator.languages?.[0];
+        if (browserLang?.startsWith("pt")) return "pt-BR";
+      }
     }
     return "en";
   });
